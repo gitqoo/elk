@@ -1,0 +1,58 @@
+version: '2'
+
+services:
+
+  elasticsearch:
+    build:
+      context: elasticsearch/
+      args:
+        ELK_VERSION: $ELK_VERSION
+    volumes:
+      - ./elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
+      - /root/docker-elk/elasticsearch/data:/usr/share/elasticsearch/data:rw            #把data掛出來，才不會不見
+    ports:
+      - "9200:9200"                         #server ip :9200檢查elasticsearch service is work 
+      - "9300:9300"                         #xpack.monitoring使用的port，功能不了解
+    environment:
+      ES_JAVA_OPTS: "-Xmx256m -Xms256m"     # Xmx 記憶體使用上限、Xms 記憶體使用下限
+      ELASTIC_PASSWORD: changeme            #更改密碼，需連同\logstash\pipeline\logstash.conf、\logstash\config\logstash.yml、\kibana\config\kibana.yml一併更改
+    networks:
+      - elk
+
+  logstash:
+    build:
+      context: logstash/
+      args:
+        ELK_VERSION: $ELK_VERSION
+    volumes:
+      - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
+      - ./logstash/pipeline:/usr/share/logstash/pipeline:ro
+    ports:
+      - "5000:5000"                         #\logstash\pipeline\logstash.conf內對應的port，提供給外部傳log資料
+      - "9527:9527"
+      - "9600:9600"
+    environment:
+      LS_JAVA_OPTS: "-Xmx256m -Xms256m"     # Xmx 記憶體使用上限、Xms 記憶體使用下限
+    networks:
+      - elk
+    depends_on:
+      - elasticsearch
+
+  kibana:
+    build:
+      context: kibana/
+      args:
+        ELK_VERSION: $ELK_VERSION
+    volumes:
+      - ./kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml:ro
+    ports:
+      - "5601:5601"                         #kibana web port
+    networks:
+      - elk
+    depends_on:
+      - elasticsearch
+
+networks:
+
+  elk:
+    driver: bridge

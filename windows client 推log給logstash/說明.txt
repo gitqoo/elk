@@ -1,0 +1,6 @@
+● client設定檔位置
+   winlogbeat/winlogbeat.yml
+
+   20190809
+   winlogbeat.yml已設定完成，可收evevt id 4663 (user刪除檔案的log)
+   需修改ELK server ip雨相對應的port
